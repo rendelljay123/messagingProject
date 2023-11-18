@@ -1,70 +1,55 @@
 import React, { Component } from "react";
 import { View, Text, StyleSheet, Platform, StatusBar } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
+import Constants from "expo-constants";
 
-
-class Status extends Component {
+export default class Status extends React.Component {
   state = {
-    isConnected: true,
+    info: 'none',
   };
 
-
-  componentDidMount() {
-    NetInfo.addEventListener((state) => {
-      console.log("Connection status:", state.isConnected);
-      this.setState({ isConnected: state.isConnected });
-    });
-  }
-
-
   render() {
-    const { isConnected } = this.state;
+    const { info } = this.state;
+    const isConnected = info !== 'none';
     const backgroundColor = isConnected ? "red" : "white";
 
-
-    // Create the StatusBar component
     const statusBar = (
       <StatusBar
         backgroundColor={backgroundColor}
-        barStyle={isConnected ? "light-content" : "dark-content"}
+        barStyle={isConnected ? 'light-content' : 'dark-content'}
         animated={false}
-      />
-    );
-
-
+        />
+      );
+      
     const messageContainer = (
       <View style={styles.messageContainer} pointerEvents={"none"}>
         {statusBar}
         {!isConnected && (
           <View style={styles.bubble}>
-            <Text style={styles.text}>No Network connection</Text>
-          </View>
-        )}
-
-
-        {isConnected && (
-          <View style={styles.bubble}>
-            <Text style={styles.text}>There is Network connection</Text>
+            <Text style={styles.text}>No Network Connection</Text>
           </View>
         )}
       </View>
     );
 
-
-    if (Platform.OS === "ios") {
+    if (Platform.OS == "ios") {
+      return (
+      <View style={[styles.status, { backgroundColor }]}>
+        {messageContainer}
+      </View>
+      );
+    } 
+    else {
       return (
         <View style={[styles.status, { backgroundColor }]}>
           {messageContainer}
         </View>
       );
     }
-    return messageContainer;
   }
 }
 
-
-const statusHeight = Platform.OS === "ios" ? 50 : StatusBar.currentHeight || 0;
-
+const statusHeight = (Platform.OS == "ios" ? Constants.statusHeight : 0);
 
 const styles = StyleSheet.create({
   status: {
@@ -75,7 +60,7 @@ const styles = StyleSheet.create({
   messageContainer: {
     zIndex: 1,
     position: "absolute",
-    top: 70,
+    top: 40,
     right: 0,
     left: 0,
     height: 80,
@@ -91,6 +76,3 @@ const styles = StyleSheet.create({
     color: "white",
   },
 });
-
-
-export default Status;
