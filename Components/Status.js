@@ -1,45 +1,66 @@
-import React, { Component } from "react";
-import { View, Text, StyleSheet, Platform, StatusBar } from "react-native";
+import React, { Component, useRef, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Platform,
+  StatusBar,
+  Animated,
+} from "react-native";
 import NetInfo from "@react-native-community/netinfo";
 import Constants from "expo-constants";
 
-export default class Status extends React.Component {
+
+class Status extends Component {
   state = {
     info: 'none',
   };
+
+
+  componentDidMount() {
+    NetInfo.addEventListener((state) => {
+      console.log("Connection status:", state.isConnected);
+      this.setState({ isConnected: state.isConnected });
+    });
+  }
+
 
   render() {
     const { info } = this.state;
     const isConnected = info !== 'none';
     const backgroundColor = isConnected ? "red" : "white";
 
+
+    // Create the StatusBar component
     const statusBar = (
       <StatusBar
         backgroundColor={backgroundColor}
         barStyle={isConnected ? 'light-content' : 'dark-content'}
         animated={false}
-        />
-      );
-      
+      />
+    );
+
+
     const messageContainer = (
       <View style={styles.messageContainer} pointerEvents={"none"}>
         {statusBar}
         {!isConnected && (
           <View style={styles.bubble}>
-            <Text style={styles.text}>No Network Connection</Text>
+            <Text style={styles.text}>No Network connection</Text>
+          </View>
+        )}
+
+
+        {isConnected && (
+          <View style={styles.bubble}>
+            <Text style={styles.text}>There is Network connection</Text>
           </View>
         )}
       </View>
     );
 
-    if (Platform.OS == "ios") {
-      return (
-      <View style={[styles.status, { backgroundColor }]}>
-        {messageContainer}
-      </View>
-      );
-    } 
-    else {
+
+    if (Platform.OS === "ios") {
       return (
         <View style={[styles.status, { backgroundColor }]}>
           {messageContainer}
@@ -49,7 +70,9 @@ export default class Status extends React.Component {
   }
 }
 
-const statusHeight = (Platform.OS == "ios" ? Constants.statusHeight : 0);
+
+const statusHeight = Platform.OS === "ios" ? 50 : StatusBar.currentHeight || 0;
+
 
 const styles = StyleSheet.create({
   status: {
@@ -75,4 +98,19 @@ const styles = StyleSheet.create({
   text: {
     color: "white",
   },
+  Animation: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: "red",
+  },
+  AnimationConnected: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: "red",
+  },
 });
+
+
+export default Status;
