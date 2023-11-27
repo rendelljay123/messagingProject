@@ -1,93 +1,193 @@
-import { StyleSheet, Text, View } from 'react-native';
-import MessageList from './Components/MessageList';
-import { createImageMessage, createLocationMessage, createTextMessage } from './utils/MessageUtils';
-import { Alert } from 'react-native';
-import { BackHandler } from 'react-native';
-import React, { Component } from 'react';
+import React, { useState, useEffect } from "react";
+import {
+  StyleSheet,
+  View,
+  Alert,
+  BackHandler,
+  Image,
+  Modal,
+  TouchableOpacity,
+  Text,
+} from "react-native";
+import Status from "./components/Status";
+import MessageList from "./components/MessageList";
+import Toolbar from "./components/Toolbar";
+import {
+  createImageMessage,
+  createTextMessage,
+  createLocationMessage,
+} from "./utils/MessageUtils";
 
-class Messenger extends Component {
-  state = {
-    messages: [
-      createImageMessage('https://unsplash.it/300/300'),
-      createTextMessage('World'),
-      createTextMessage('Hello'),
-      createLocationMessage({
-        latitude: 37.78825,
-        longitude: -122.4324,
-      }),
-    ],
-    fullscreenImage: null
+const App = () => {
+  const [messages, setMessages] = useState([
+    createImageMessage("https://unsplash.it/600/300"),
+    createTextMessage("World"),
+    createTextMessage("Hello"),
+    createLocationMessage({ latitude: 37.78825, longitude: -122.4324 }),
+  ]);
+
+  const [fullscreenImage, setFullscreenImage] = useState(null);
+
+  const [isInputFocused, setIsInputFocused] = useState(false); // Track focus state
+
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        if (fullscreenImage) {
+          closeFullscreenImage();
+          return true;
+        }
+        return false;
+      }
+    );
+
+    return () => backHandler.remove();
+  }, [fullscreenImage]);
+
+  const handleDeleteMessage = (message) => {
+    const updatedMessages = messages.filter((m) => m !== message);
+    setMessages(updatedMessages);
+    closeFullscreenImage();
   };
 
-  handlePressMessage = (message) => {
-    Alert.alert(
-      'Delete message?',
-      'Are you sure you want to delete this message?',
-      [
-        {text: 'Delete', onPress: () => this.deleteMessage(message)}, 
-        {text: 'Cancel', style: 'cancel'},
-      ],
-      { cancelable: true }
-    );
-  }
-  
-  deleteMessage = (message) => {
-    // Filter out the message and update state 
-  }
-  renderMessageList() {
-    const { messages } = this.state;
-  
-    return (
-      <View style={styles.content}>
-        <MessageList messages={messages}setFullscreenImage={(uri) => this.setState({fullscreenImage: uri})} />
-      </View>
-    );
-  }
-  componentDidMount() {
-    BackHandler.addEventListener('hardwareBackPress', this.handleBackButton);
-  }
-  
-  componentWillUnmount() {
-    BackHandler.removeEventListener('hardwareBackPress', this.handleBackButton);
-  }
-  
-  handleBackButton = () => {
-    if (this.state.fullscreenImage) {
-      this.setState({fullscreenImage: null});
-      return true;
+  const handlePressMessage = (message) => {
+    if (message.type === "text") {
+      Alert.alert(
+        "Delete Message",
+        "Do you want to delete this message?",
+        [
+          { text: "Delete", onPress: () => handleDeleteMessage(message) },
+          { text: "Cancel", style: "cancel" },
+        ],
+        { cancelable: false }
+      );
+    } else if (message.type === "image") {
+      setFullscreenImage(message.uri);
     }
-    
-    return false;
-  }
-  render() {
-    const { messages } = this.state;
+  };
+
+  const closeFullscreenImage = () => {
+    setFullscreenImage(null);
+  };
+
+  const renderFullscreenImage = () => {
     return (
-      <View>
-        {this.state.fullscreenImage && 
-        <Modal 
-          transparent={true}
-          visible={true}
-          onRequestClose={() => this.setState({fullscreenImage: null})}
-        >
-          <Image 
-            source={{uri: this.state.fullscreenImage}}
-            style={styles.fullscreenImage} 
+      <Modal
+        animationType="slide"
+        transparent={false}
+        visible={fullscreenImage !== null}
+        onRequestClose={closeFullscreenImage}
+      >
+        <View style={styles.fullscreenContainer}>
+          <Image
+            style={styles.fullscreenImage}
+            source={{ uri: fullscreenImage }}
+            resizeMode="contain"
           />
-        </Modal>
-      }
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={closeFullscreenImage}
+          >
+            <Text style={styles.closeButtonText}>Close</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() =>
+              handleDeleteMessage(
+                messages.find((m) => m.uri === fullscreenImage)
+              )
+            }
+          >
+            <Text style={styles.deleteButtonText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+    );
+  };
 
-      {this.renderMessageList()}
-        <MessageList  /> 
+  // Callbacks for Toolbar component
+  const handlePressToolbarCamera = () => {
+    // Handle camera press
+  };
 
-      </View>
-    )
+  const handlePressToolbarLocation = () => {
+    // Handle location press
+  };
+
+  const handleChangeFocus = (isFocused) => {
+    setIsInputFocused(isFocused);
+  };
+
+  const handleSubmit = (text) => {
+    const updatedMessages = [createTextMessage(text), ...messages];
+    setMessages(updatedMessages);
+  };
+
+  return (
+    <View style={styles.container}>
+      <Status />
+      <MessageList
+        messages={messages}
+        onPressMessage={handlePressMessage}
+        onDeleteMessage={handleDeleteMessage}
+      />
+      {renderFullscreenImage()}
+      {renderToolbar()}
+    </View>
+  );
+
+  function renderToolbar() {
+    return (
+      <Toolbar
+        isFocused={isInputFocused}
+        onSubmit={handleSubmit}
+        onChangeFocus={handleChangeFocus}
+        onPressCamera={handlePressToolbarCamera}
+        onPressLocation={handlePressToolbarLocation}
+      />
+    );
   }
-}
+};
 
 const styles = StyleSheet.create({
-  content: {
+  container: {
     flex: 1,
+    backgroundColor: "white",
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
+  fullscreenContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "black",
+  },
+  fullscreenImage: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+  },
+  closeButton: {
+    position: "absolute",
+    top: 20,
+    right: 20,
+    padding: 10,
+  },
+  closeButtonText: {
+    color: "white",
+    fontSize: 16,
+  },
+  deleteButton: {
+    position: "absolute",
+    top: 20,
+    left: 20,
+    padding: 10,
+  },
+  deleteButtonText: {
+    color: "white",
+    fontSize: 16,
   },
 });
 
-export default Messenger;
+export default App;
