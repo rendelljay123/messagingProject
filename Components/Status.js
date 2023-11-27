@@ -1,116 +1,96 @@
-import React, { Component, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  Platform,
   StatusBar,
+  View,
+  StyleSheet,
   Animated,
+  Easing,
+  Text,
 } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
-import Constants from "expo-constants";
 
+export default function Status() {
+  const [isConnected, setIsConnected] = useState(true);
+  const [animation] = useState(new Animated.Value(0));
+  const backgroundColor = isConnected ? "green" : "red";
 
-class Status extends Component {
-  state = {
-    info: 'none',
+  const statusBar = (
+    <StatusBar
+      backgroundColor={backgroundColor}
+      barStyle={isConnected ? "dark-content" : "light-content"}
+      animated={false}
+    />
+  );
+
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setIsConnected(state.isConnected);
+      animateStatusBubble();
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const animateStatusBubble = () => {
+    Animated.sequence([
+      Animated.timing(animation, {
+        toValue: 1,
+        duration: 500,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+      Animated.timing(animation, {
+        toValue: 0,
+        duration: 500,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+        delay: 1000, // Wait for 1 second before disappearing
+      }),
+    ]).start();
   };
 
+  const statusBackgroundColor = isConnected ? "green" : "red";
+  const bubbleStyle = {
+    backgroundColor: statusBackgroundColor,
+    transform: [
+      {
+        scale: animation.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, 1],
+        }),
+      },
+    ],
+  };
 
-  componentDidMount() {
-    NetInfo.addEventListener((state) => {
-      console.log("Connection status:", state.isConnected);
-      this.setState({ isConnected: state.isConnected });
-    });
-  }
-
-
-  render() {
-    const { info } = this.state;
-    const isConnected = info !== 'none';
-    const backgroundColor = isConnected ? "red" : "white";
-
-
-    // Create the StatusBar component
-    const statusBar = (
-      <StatusBar
-        backgroundColor={backgroundColor}
-        barStyle={isConnected ? 'light-content' : 'dark-content'}
-        animated={false}
-      />
-    );
-
-
-    const messageContainer = (
-      <View style={styles.messageContainer} pointerEvents={"none"}>
-        {statusBar}
-        {!isConnected && (
-          <View style={styles.bubble}>
-            <Text style={styles.text}>No Network connection</Text>
-          </View>
-        )}
-
-
-        {isConnected && (
-          <View style={styles.bubble}>
-            <Text style={styles.text}>There is Network connection</Text>
-          </View>
-        )}
-      </View>
-    );
-
-
-    if (Platform.OS === "ios") {
-      return (
-        <View style={[styles.status, { backgroundColor }]}>
-          {messageContainer}
-        </View>
-      );
-    }
-  }
+  return (
+    <View style={styles.container}>
+      {statusBar}
+      <Animated.View style={[styles.statusBubble, bubbleStyle]}>
+        <Text style={styles.statusText}>
+          {isConnected ? "Connected to the Internet" : "Network Disconnected"}
+        </Text>
+      </Animated.View>
+    </View>
+  );
 }
 
-
-const statusHeight = Platform.OS === "ios" ? 50 : StatusBar.currentHeight || 0;
-
-
 const styles = StyleSheet.create({
-  status: {
-    zIndex: 1,
-    height: statusHeight,
-    padding: 10,
-  },
-  messageContainer: {
-    zIndex: 1,
+  container: {
     position: "absolute",
-    top: 40,
-    right: 0,
+    top: 0,
     left: 0,
-    height: 80,
-    alignItems: "center",
+    right: 0,
+    zIndex: 1,
   },
-  bubble: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+  statusBubble: {
+    backgroundColor: "green", // Default color
+    padding: 10,
     borderRadius: 20,
-    backgroundColor: "red",
+    alignSelf: "center",
+    position: "absolute",
+    top: 15,
   },
-  text: {
+  statusText: {
     color: "white",
   },
-  Animation: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: "red",
-  },
-  AnimationConnected: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: "red",
-  },
 });
-
-
-export default Status;
