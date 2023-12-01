@@ -28,18 +28,6 @@ export default class Toolbar extends React.Component {
     onPressLocation: PropTypes.func,
   };
 
-  
-  componentWillReceiveProps(nextProps) {
-    if (nextProps.isFocused !== this.props.isFocused) {
-      if (nextProps.isFocused) {
-        this.input.focus();
-      } else {
-        this.input.blur();
-      }
-    }
-  }
-
-
   static defaultProps = {
     onChangeFocus: () => {},
     onSubmit: () => {},
