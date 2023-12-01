@@ -12,7 +12,7 @@ import NetInfo from "@react-native-community/netinfo";
 export default function Status() {
   const [isConnected, setIsConnected] = useState(true);
   const [animation] = useState(new Animated.Value(0));
-  const backgroundColor = isConnected ? "green" : "red";
+  const backgroundColor = isConnected ? "red" : "yellow";
 
   const statusBar = (
     <StatusBar
@@ -49,7 +49,7 @@ export default function Status() {
     ]).start();
   };
 
-  const statusBackgroundColor = isConnected ? "green" : "red";
+  const statusBackgroundColor = isConnected ? "red" : "yellow";
   const bubbleStyle = {
     backgroundColor: statusBackgroundColor,
     transform: [
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   statusBubble: {
-    backgroundColor: "green", // Default color
+    backgroundColor: "red", // Default color
     padding: 10,
     borderRadius: 20,
     alignSelf: "center",
