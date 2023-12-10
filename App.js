@@ -17,6 +17,7 @@ import {
   createTextMessage,
   createLocationMessage,
 } from "./utils/MessageUtils";
+import * as Location from "expo-location";
 
 const App = () => {
   const [messages, setMessages] = useState([
@@ -27,8 +28,7 @@ const App = () => {
   ]);
 
   const [fullscreenImage, setFullscreenImage] = useState(null);
-
-  const [isInputFocused, setIsInputFocused] = useState(false); // Track focus state
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
@@ -106,13 +106,36 @@ const App = () => {
     );
   };
 
-  // Callbacks for Toolbar component
   const handlePressToolbarCamera = () => {
     // Handle camera press
   };
 
-  const handlePressToolbarLocation = () => {
-    // Handle location press
+  const handlePressToolbarLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+
+      if (status !== "granted") {
+        Alert.alert("Location permission not granted");
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+
+      const { coords } = location;
+      const { latitude, longitude } = coords;
+
+      setMessages([
+        createLocationMessage({
+          latitude,
+          longitude,
+        }),
+        ...messages,
+      ]);
+    } catch (error) {
+      console.error("Error getting location:", error);
+    }
   };
 
   const handleChangeFocus = (isFocused) => {
